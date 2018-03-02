@@ -1,0 +1,84 @@
+Creating a 9front Pi Img (Tested with a Raspberry Pi Zero)
+
+The current img (9front-pi-3125.9fcca5b8ac11.img) will not boot unless you overwrite 
+the files on the FAT partition with the updated pi firmware (https://github.com/raspberrypi/firmware).
+This will boot, however the resulting img is very outdated.
+
+First, create the img file (adjust count for sd card size):
+
+dd if=/dev/zero of=9frontPi.img count=13000000
+
+Create a small FAT16 partition:
+
+fdisk 9frontPi.img
+n (new part)
+p (primary)
+sectors= +70M
+t (change type)
+hex code = 6 (FAT16)
+
+Use the rest of the img for a Plan9 partition:
+n
+e (extended)
+sectors (use the rest of the img)
+t
+hex code = 39 (Plan9)
+w (write)
+q (quit)
+
+Using QEMU, boot the 9front.iso using the img as the drive:
+
+qemu-system-x86_64 -cpu host -enable-kvm -m 1024 \
+ -net nic,model=virtio,macaddr=52:54:00:00:EE:03 -net user \
+ -device virtio-scsi-pci,id=scsi \
+ -drive if=none,id=vd0,file=9frontPi.img -device scsi-hd,drive=vd0 \
+ -drive if=none,id=vd1,file=9front.iso -device scsi-cd,drive=vd1,bootindex=0
+
+Install 9front to the img. Use hjfs and use an appropriate ram cache for
+your pi model. Install 9fat and make sure it's marked as active and installed to
+the master boot record (You will need this in order to boot into the img file. After
+the img is burned to the card, the Pi will use the FAT partition for booting).
+Complete the installation.
+
+Boot 9frontPi.img:
+
+qemu-system-x86_64 -cpu host -enable-kvm -m 1024 \
+ -net nic,model=virtio,macaddr=52:54:00:00:EE:03 -net user \
+ -device virtio-scsi-pci,id=scsi \
+ -drive if=none,id=vd0,file=9frontPi.img -device scsi-hd,drive=vd0
+
+You will have to compile everything for ARM. Create any missing directories:
+cd /
+. /sys/lib/rootstub
+
+Compile everything:
+cd /sys/src
+objtype=arm mk install
+
+Compile the kernel:
+cd /sys/src/9/bcm
+mk install && mk install 'CONF=picpuf'
+
+Initialize the FAT partition:
+disk/fdisk -d /dev/sd00/dos
+
+Mount it:
+dossrv -f /dev/sd00/dos
+mount -c /srv/dos /n/rpi /dev/sd00/dos
+
+Copy the kernels over:
+cp /arm/9pif/ /arm/9picpuf /n/rpi
+
+Download the updated rpi firmware and boot files and copy them over to the
+FAT partition. You can mount the FAT partition after you burn the img the sdcard
+and copy them later if you are unable to do so.
+
+Unmount the FAT partition:
+umount /n/rpi
+rm -f /srv/dos
+
+Bring the system to a halt and exit QEMU. Now burn the img to the sd card:
+dd bs=4M if=9frontPi.img of=/dev/sdb conv=fsync status=progress
+
+If you did not copy the firmware and boot files earlier, mount the FAT partition
+and copy them over. You should now be able to boot the img on the pi.
