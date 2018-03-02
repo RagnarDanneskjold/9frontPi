@@ -5,11 +5,9 @@ the files on the FAT partition with the updated pi firmware (https://github.com/
 This will boot, however the resulting img is very outdated.
 
 First, create the img file (adjust count for sd card size):
-
 dd if=/dev/zero of=9frontPi.img count=13000000
 
 Create a small FAT16 partition:
-
 fdisk 9frontPi.img
 n (new part)
 p (primary)
@@ -70,7 +68,7 @@ Copy the kernels over:
 cp /arm/9pif/ /arm/9picpuf /n/rpi
 
 Download the updated rpi firmware and boot files and copy them over to the
-FAT partition. You can mount the FAT partition after you burn the img the sdcard
+FAT partition. You can mount the FAT partition after you burn the img to the sdcard
 and copy them later if you are unable to do so.
 
 Unmount the FAT partition:
