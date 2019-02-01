@@ -1,4 +1,6 @@
 Creating a 9front Pi Img (Tested with a Raspberry Pi Zero)
+ 
+NOTE: The latest 9front release has an updated guide on building an sdcard img (http://fqa.9front.org/appendixj.html)
 
 The current img (9front-pi-3125.9fcca5b8ac11.img) will not boot unless you overwrite 
 the files on the FAT partition with the updated pi firmware (https://github.com/raspberrypi/firmware).
